@@ -2,12 +2,13 @@
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
+vim.opt.tabstop = 4
+
 -- Set to true if you have a Nerd Font installed and selected in the terminal
 vim.g.have_nerd_font = true
 vim.g.netrw_bufsettings = 'noma nomod nu rnu nobl nowrap ro'
 vim.g.netrw_winsize = 20
 vim.g.netrw_banner = 0
-vim.g.netrw_liststyle = 3
 
 -- [[ Setting options ]]
 -- See `:help vim.opt`
@@ -66,6 +67,8 @@ vim.opt.scrolloff = 10
 -- [[ Basic Keymaps ]]
 
 vim.keymap.set('n', '<leader>pv', vim.cmd.Ex)
+vim.keymap.set('n', '<leader>x', ':!chmod +x %<CR>')
+vim.keymap.set('n', '<C-f>', ':silent !tmux neww -d tms && tmux select-window -l<CR>', { silent = true })
 -- Clear highlights on search when pressing <Esc> in normal mode
 --  See `:help hlsearch`
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
@@ -140,6 +143,7 @@ require('lazy').setup({
   'github/copilot.vim',
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
   'brenoprata10/nvim-highlight-colors',
+  { 'yaocccc/nvim-foldsign', event = 'CursorHold', config = 'require("nvim-foldsign").setup()' },
   -- lazy.nvim
   {
     'folke/noice.nvim',
@@ -189,6 +193,12 @@ require('lazy').setup({
         changedelete = { text = '~' },
       },
     },
+  },
+  {
+    'laytan/tailwind-sorter.nvim',
+    dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-lua/plenary.nvim' },
+    build = 'cd formatter && npm ci && npm run build',
+    config = true,
   },
 
   -- NOTE: Plugins can also be configured to run Lua code when they are loaded.
@@ -337,15 +347,22 @@ require('lazy').setup({
         -- You can put your default mappings / updates / etc. in here
         --  All the info you're looking for is in `:help telescope.setup()`
         --
-        -- defaults = {
-        --   mappings = {
-        --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
-        --   },
-        -- },
-        -- pickers = {}
+        defaults = {
+          theme = 'center',
+          mappings = {
+            i = { ['<c-enter>'] = 'to_fuzzy_refine' },
+          },
+        },
+        pickers = {},
+        layout_config = {
+          horizontal = {
+            mirror = false,
+            previewer = true,
+          },
+        },
         extensions = {
           file_browser = {
-            theme = 'ivy',
+            theme = 'dropdown',
             -- disables netrw and use telescope-file-browser in its place
             hijack_netrw = true,
             mappings = {
@@ -358,7 +375,7 @@ require('lazy').setup({
             },
           },
           ['ui-select'] = {
-            require('telescope.themes').get_dropdown(),
+            require('telescope.themes').get_dropdown { winblend = 20 },
           },
         },
       }
@@ -379,7 +396,7 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', function()
-        builtin.oldfiles(require('telescope.themes').get_dropdown {})
+        builtin.oldfiles(require('telescope.themes').get_dropdown { layout_config = { width = 0.9 } })
       end, { desc = '[S]earch Recent Files ("." for repeat)' })
 
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
@@ -636,14 +653,26 @@ require('lazy').setup({
       }
     end,
   },
-
+  {
+    'sbdchd/neoformat',
+    keys = {
+      {
+        '<leader>ff',
+        function()
+          vim.cmd 'Neoformat'
+        end,
+        mode = '',
+        desc = '[F]ormat [F]ile',
+      },
+    },
+  },
   { -- Autoformat
     'stevearc/conform.nvim',
     event = { 'BufWritePre' },
     cmd = { 'ConformInfo' },
     keys = {
       {
-        '<leader>f',
+        '<leader>fc',
         function()
           require('conform').format { async = true, lsp_format = 'fallback' }
         end,
@@ -675,7 +704,10 @@ require('lazy').setup({
         -- python = { "isort", "black" },
         --
         -- You can use 'stop_after_first' to run the first available formatter from the list
-        -- javascript = { "prettierd", "prettier", stop_after_first = true },
+        typescript = { 'prettier' },
+        typescriptreact = { 'prettier' },
+        javascript = { 'prettier' },
+        javascriptreact = { 'prettier' },
       },
     },
   },
@@ -796,8 +828,8 @@ require('lazy').setup({
     end,
   },
 
+  -- Change the name of the colorscheme plugin below, and then
   { -- You can easily change to a different colorscheme.
-    -- Change the name of the colorscheme plugin below, and then
     -- change the command in the config to whatever the name of that colorscheme is.
     --
     -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
@@ -836,7 +868,45 @@ require('lazy').setup({
       -- - saiw) - [S]urround [A]dd [I]nner [W]ord [)]Paren
       -- - sd'   - [S]urround [D]elete [']quotes
       -- - sr)'  - [S]urround [R]eplace [)] [']
-      require('mini.surround').setup()
+      require('mini.surround').setup {
+        -- Add custom surroundings to be used on top of builtin ones. For more
+        -- information with examples, see `:h MiniSurround.config`.
+        custom_surroundings = nil,
+
+        -- Duration (in ms) of highlight when calling `MiniSurround.highlight()`
+        highlight_duration = 500,
+
+        -- Module mappings. Use `''` (empty string) to disable one.
+        mappings = {
+          add = 'sa', -- Add surrounding in Normal and Visual modes
+          delete = 'sd', -- Delete surrounding
+          find = 'sf', -- Find surrounding (to the right)
+          find_left = 'sF', -- Find surrounding (to the left)
+          highlight = 'sh', -- Highlight surrounding
+          replace = 'sr', -- Replace surrounding
+          update_n_lines = 'sn', -- Update `n_lines`
+
+          suffix_last = 'l', -- Suffix to search with "prev" method
+          suffix_next = 'n', -- Suffix to search with "next" method
+        },
+
+        -- Number of lines within which surrounding is searched
+        n_lines = 20,
+
+        -- Whether to respect selection type:
+        -- - Place surroundings on separate lines in linewise mode.
+        -- - Place surroundings on each line in blockwise mode.
+        respect_selection_type = false,
+
+        -- How to search for surrounding (first inside current line, then inside
+        -- neighborhood). One of 'cover', 'cover_or_next', 'cover_or_prev',
+        -- 'cover_or_nearest', 'next', 'prev', 'nearest'. For more details,
+        -- see `:h MiniSurround.config`.
+        search_method = 'cover',
+
+        -- Whether to disable showing non-error feedback
+        silent = false,
+      }
 
       -- Simple and easy statusline.
       --  You could remove this setup call if you don't like it,
@@ -896,7 +966,7 @@ require('lazy').setup({
   -- require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
   require 'kickstart.plugins.autopairs',
-  -- require 'kickstart.plugins.neo-tree',
+  require 'kickstart.plugins.neo-tree',
   -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
