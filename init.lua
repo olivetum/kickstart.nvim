@@ -1,7 +1,6 @@
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
-
 vim.opt.tabstop = 4
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
@@ -20,7 +19,6 @@ vim.opt.number = true
 vim.opt.relativenumber = true
 
 vim.opt.mouse = 'a'
-
 vim.opt.showmode = false
 
 -- Sync clipboard between OS and Neovim.
@@ -65,7 +63,7 @@ vim.opt.cursorline = true
 vim.opt.scrolloff = 10
 
 -- [[ Basic Keymaps ]]
-
+vim.keymap.set('n', '-', '<CMD>Oil<CR>', { desc = 'Open parent directory' })
 vim.keymap.set('n', '<leader>pv', vim.cmd.Ex)
 vim.keymap.set('n', '<leader>x', ':!chmod +x %<CR>')
 vim.keymap.set('n', '<C-f>', ':silent !tmux neww -d tms && tmux select-window -l<CR>', { silent = true })
@@ -109,25 +107,7 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   end,
 })
 
---[[
-    ,--,
- ,---.'|                      ,----,
- |   | :     ,---,          .'   .`|
- :   : |    '  .' \      .'   .'   ;     ,---,
- |   ' :   /  ;    '.  ,---, '    .'    /_ ./|
- ;   ; '  :  :       \ |   :     .,---, |  ' :
- '   | |__:  |   /\   \;   | .'  /___/ \.  : |
- |   | :.'|  :  ' ;.   `---' /  ; .  \  \ ,' '
- '   :    |  |  ;/  \   \/  ;  /   \  ;  `  ,'
- |   |  ./'  :  | \  \ ,;  /  /--,  \  \    '
- ;   : ;  |  |  '  '--'/  /  / .`|   '  \   |
- |   ,/   |  :  :    ./__;       :    \  ;  ;
- '---'    |  | ,'    |   :     .'      :  \  \
-          `--''      ;   |  .'          \  ' ;
-                     `---'               `--`
---]]
--- [[ Install `lazy.nvim` plugin manager ]]
---    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
+-- LAZY
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
   local lazyrepo = 'https://github.com/folke/lazy.nvim.git'
@@ -140,157 +120,52 @@ vim.opt.rtp:prepend(lazypath)
 
 -- NOTE: Here is where you install your plugins.
 require('lazy').setup({
+  'tpope/vim-fugitive',
   'github/copilot.vim',
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
   'brenoprata10/nvim-highlight-colors',
-  { 'yaocccc/nvim-foldsign', event = 'CursorHold', config = 'require("nvim-foldsign").setup()' },
+  'tikhomirov/vim-glsl',
   -- lazy.nvim
-  {
-    'folke/noice.nvim',
-    event = 'VeryLazy',
-    opts = {
-      -- add any options here
-    },
-    dependencies = {
-      -- if you lazy-load any plugin below, make sure to add proper `module="..."` entries
-      'MunifTanjim/nui.nvim',
-      -- OPTIONAL:
-      --   `nvim-notify` is only needed, if you want to use the notification view.
-      --   If not available, we use `mini` as the fallback
-      'rcarriga/nvim-notify',
-    },
-  },
-  {
-    'nvim-telescope/telescope-file-browser.nvim',
-    dependencies = { 'nvim-telescope/telescope.nvim', 'nvim-lua/plenary.nvim' },
-  },
-  {
-    'andrew-george/telescope-themes',
-    config = function()
-      require('telescope').load_extension 'themes'
-    end,
-  },
-  -- NOTE: Plugins can also be added by using a table,
-  -- with the first argument being the link and the following
-  -- keys can be used to configure plugin behavior/loading/etc.
+  -- Then use Snacks.* functions
   --
-  -- Use `opts = {}` to force a plugin to be loaded.
-  --
-
-  -- Here is a more advanced example where we pass configuration
-  -- options to `gitsigns.nvim`. This is equivalent to the following Lua:
-  --    require('gitsigns').setup({ ... })
-  --
-  -- See `:help gitsigns` to understand what the configuration keys do
-  { -- Adds git related signs to the gutter, as well as utilities for managing changes
-    'lewis6991/gitsigns.nvim',
-    opts = {
-      signs = {
-        add = { text = '+' },
-        change = { text = '~' },
-        delete = { text = '_' },
-        topdelete = { text = '‾' },
-        changedelete = { text = '~' },
-      },
-    },
-  },
+  require 'plugins.snacks',
+  require 'plugins.oil',
+  require 'plugins.noice',
+  require 'plugins.lualine',
+  require 'plugins.telescope-file-browser',
+  require 'plugins.which-key',
+  require 'plugins.fold-sign',
+  require 'plugins.telescope-themes',
+  require 'plugins.gitsigns',
   {
     'laytan/tailwind-sorter.nvim',
     dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-lua/plenary.nvim' },
     build = 'cd formatter && npm ci && npm run build',
     config = true,
   },
-
-  -- NOTE: Plugins can also be configured to run Lua code when they are loaded.
+  -- { -- Configuration for 'harpoon' plugin
+  --   'ThePrimeagen/harpoon',
+  --   config = function()
+  --     local mark = require 'harpoon.mark'
+  --     local ui = require 'harpoon.ui'
   --
-  -- This is often very useful to both group configuration, as well as handle
-  -- lazy loading plugins that don't need to be loaded immediately at startup.
+  --     vim.keymap.set('n', '<leader>a', mark.add_file, { desc = '[H]arpoon [A]dd File' })
+  --     vim.keymap.set('n', '<C-e>', ui.toggle_quick_menu, { desc = '[H]arpoon [E]dit Menu' })
   --
-  -- For example, in the following configuration, we use:
-  --  event = 'VimEnter'
-  --
-  -- which loads which-key before all the UI elements are loaded. Events can be
-  -- normal autocommands events (`:help autocmd-events`).
-  --
-  -- Then, because we use the `config` key, the configuration only runs
-  -- after the plugin has been loaded:
-  --  config = function() ... end
-
-  { -- Useful plugin to show you pending keybinds.
-    'folke/which-key.nvim',
-    event = 'VimEnter', -- Sets the loading event to 'VimEnter'
-    opts = {
-      icons = {
-        -- set icon mappings to true if you have a Nerd Font
-        mappings = vim.g.have_nerd_font,
-        keys = vim.g.have_nerd_font and {} or {
-          Up = '<Up> ',
-          Down = '<Down> ',
-          Left = '<Left> ',
-          Right = '<Right> ',
-          C = '<C-…> ',
-          M = '<M-…> ',
-          D = '<D-…> ',
-          S = '<S-…> ',
-          CR = '<CR> ',
-          Esc = '<Esc> ',
-          ScrollWheelDown = '<ScrollWheelDown> ',
-          ScrollWheelUp = '<ScrollWheelUp> ',
-          NL = '<NL> ',
-          BS = '<BS> ',
-          Space = '<Space> ',
-          Tab = '<Tab> ',
-          F1 = '<F1>',
-          F2 = '<F2>',
-          F3 = '<F3>',
-          F4 = '<F4>',
-          F5 = '<F5>',
-          F6 = '<F6>',
-          F7 = '<F7>',
-          F8 = '<F8>',
-          F9 = '<F9>',
-          F10 = '<F10>',
-          F11 = '<F11>',
-          F12 = '<F12>',
-        },
-      },
-
-      -- Document existing key chains
-      spec = {
-        { '<leader>c', group = '[C]ode', mode = { 'n', 'x' } },
-        { '<leader>d', group = '[D]ocument' },
-        { '<leader>r', group = '[R]ename' },
-        { '<leader>s', group = '[S]earch' },
-        { '<leader>w', group = '[W]orkspace' },
-        { '<leader>t', group = '[T]oggle' },
-        { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
-      },
-    },
-  },
-
-  { -- Configuration for 'harpoon' plugin
-    'ThePrimeagen/harpoon',
-    config = function()
-      local mark = require 'harpoon.mark'
-      local ui = require 'harpoon.ui'
-
-      vim.keymap.set('n', '<leader>a', mark.add_file, { desc = '[H]arpoon [A]dd File' })
-      vim.keymap.set('n', '<C-e>', ui.toggle_quick_menu, { desc = '[H]arpoon [E]dit Menu' })
-
-      vim.keymap.set('n', '<C-h>', function()
-        ui.nav_file(1)
-      end, { desc = '[H]arpoon Nav [1]' })
-      vim.keymap.set('n', '<C-u>', function()
-        ui.nav_file(2)
-      end, { desc = '[H]arpoon Nav [2]' })
-      vim.keymap.set('n', '<C-n>', function()
-        ui.nav_file(3)
-      end, { desc = '[H]arpoon Nav [3]' })
-      vim.keymap.set('n', '<C-s>', function()
-        ui.nav_file(4)
-      end, { desc = '[H]arpoon Nav [4]' })
-    end,
-  },
+  --     vim.keymap.set('n', '<C-h>', function()
+  --       ui.nav_file(1)
+  --     end, { desc = '[H]arpoon Nav [1]' })
+  --     vim.keymap.set('n', '<C-u>', function()
+  --       ui.nav_file(2)
+  --     end, { desc = '[H]arpoon Nav [2]' })
+  --     vim.keymap.set('n', '<C-n>', function()
+  --       ui.nav_file(3)
+  --     end, { desc = '[H]arpoon Nav [3]' })
+  --     vim.keymap.set('n', '<C-s>', function()
+  --       ui.nav_file(4)
+  --     end, { desc = '[H]arpoon Nav [4]' })
+  --   end,
+  -- },
   -- NOTE: Plugins can specify dependencies.
   --
   -- The dependencies are proper plugin specifications as well - anything
@@ -457,35 +332,16 @@ require('lazy').setup({
       'hrsh7th/cmp-nvim-lsp',
     },
     config = function()
-      -- Brief aside: **What is LSP?**
-      --
-      -- LSP is an initialism you've probably heard, but might not understand what it is.
-      --
-      -- LSP stands for Language Server Protocol. It's a protocol that helps editors
-      -- and language tooling communicate in a standardized fashion.
-      --
-      -- In general, you have a "server" which is some tool built to understand a particular
-      -- language (such as `gopls`, `lua_ls`, `rust_analyzer`, etc.). These Language Servers
-      -- (sometimes called LSP servers, but that's kind of like ATM Machine) are standalone
-      -- processes that communicate with some "client" - in this case, Neovim!
-      --
-      -- LSP provides Neovim with features like:
-      --  - Go to definition
-      --  - Find references
-      --  - Autocompletion
-      --  - Symbol Search
-      --  - and more!
-      --
-      -- Thus, Language Servers are external tools that must be installed separately from
-      -- Neovim. This is where `mason` and related plugins come into play.
-      --
-      -- If you're wondering about lsp vs treesitter, you can check out the wonderfully
-      -- and elegantly composed help section, `:help lsp-vs-treesitter`
-
-      --  This function gets run when an LSP attaches to a particular buffer.
-      --    That is to say, every time a new file is opened that is associated with
-      --    an lsp (for example, opening `main.rs` is associated with `rust_analyzer`) this
-      --    function will be executed to configure the current buffer
+      local lspconfig = require 'lspconfig'
+      lspconfig.sourcekit.setup {}
+      vim.api.nvim_create_autocmd('LspAttach', {
+        desc = 'LSP Actions',
+        callback = function(args)
+          vim.keymap.set('n', 'K', vim.lsp.buf.hover, { noremap = true, silent = true })
+          vim.keymap.set('n', 'gd', vim.lsp.buf.definition, { noremap = true, silent = true })
+        end,
+      })
+      -- LSP
       vim.api.nvim_create_autocmd('LspAttach', {
         group = vim.api.nvim_create_augroup('kickstart-lsp-attach', { clear = true }),
         callback = function(event)
@@ -933,7 +789,7 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = { 'bash', 'c', 'diff', 'html', 'glsl', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
