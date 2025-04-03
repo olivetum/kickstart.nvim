@@ -1,4 +1,4 @@
---  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
+--NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
 require('config.config').setup()
 require('config.keymaps').setup()
 
@@ -9,7 +9,6 @@ vim.api.nvim_create_autocmd('TextYankPost', {
     vim.highlight.on_yank()
   end,
 })
-
 -- LAZY
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
@@ -21,16 +20,13 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
 end ---@diagnostic disable-next-line: undefined-field
 vim.opt.rtp:prepend(lazypath)
 
--- NOTE: Here is where you install your plugins.
 require('lazy').setup({
   'tpope/vim-fugitive',
   'github/copilot.vim',
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
   'brenoprata10/nvim-highlight-colors',
   'tikhomirov/vim-glsl',
-  -- lazy.nvim
-  -- Then use Snacks.* functions
-  --
+
   require 'plugins.snacks',
   require 'plugins.oil',
   require 'plugins.noice',
@@ -258,7 +254,7 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'glsl', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = { 'bash', 'c', 'diff', 'html', 'glsl', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'swift' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -320,5 +316,8 @@ require('lazy').setup({
   },
 })
 
+vim.api.nvim_set_hl(0, 'LineNrAbove', { fg = '#565F89', bold = true })
+vim.api.nvim_set_hl(0, 'LineNr', { fg = 'white', bold = true })
+vim.api.nvim_set_hl(0, 'LineNrBelow', { fg = '#565F89', bold = true })
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
